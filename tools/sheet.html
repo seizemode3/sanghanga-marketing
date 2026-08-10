@@ -1,0 +1,17 @@
+<title>ruin sheet</title>
+<style>
+body{background:#111;color:#ddd;font-family:sans-serif;margin:0;padding:14px}
+.g{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+figure{margin:0}
+img{width:100%;aspect-ratio:4/5;object-fit:cover;object-position:center 22%;display:block;border-radius:4px;background:#222}
+figcaption{font-size:11px;padding:4px 0;color:#8a9}
+</style>
+<div class="g" id="g"></div>
+<script>
+const L=['int-betrayal-2','int-betrayal-3','int-betrayal-4','int-betrayal-5',
+ 'int-rooftop-2','int-rooftop-3','int-rooftop-4','int-rooftop-5',
+ 'int-flash-2','int-flash-3','int-flash-4','int-flash-5',
+ 'int-resolve-2','int-resolve-3','int-resolve-4','int-resolve-5','fmc-fall'];
+document.getElementById('g').innerHTML = L.map(n=>
+ `<figure><img src="assets/${n}.webp"><figcaption>${n}</figcaption></figure>`).join('');
+</script>
