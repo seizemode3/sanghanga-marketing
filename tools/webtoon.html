@@ -1,0 +1,161 @@
+<title>나 혼자만 상한가 — 막장 웹툰</title>
+
+<style>
+  :root{
+    --page-bg:#0a0b0f; --page-ink:#e8eaf0; --page-sub:#8a92a3; --page-line:#23262f;
+    --gold:#f5c451; --red:#ff4d4d; --green:#4ade80;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --page-bg:#efeef0; --page-ink:#16181d; --page-sub:#666d7a; --page-line:#d8d5d9; }
+  }
+  :root[data-theme="light"]{ --page-bg:#efeef0; --page-ink:#16181d; --page-sub:#666d7a; --page-line:#d8d5d9; }
+  :root[data-theme="dark"]{ --page-bg:#0a0b0f; --page-ink:#e8eaf0; --page-sub:#8a92a3; --page-line:#23262f; }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--page-bg); color:var(--page-ink);
+    font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1280px;margin:0 auto;padding:52px 22px 110px}
+
+  .pagehead{display:flex;flex-direction:column;gap:13px;padding-bottom:26px;border-bottom:1px solid var(--page-line);margin-bottom:14px}
+  .eyebrow{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);font-weight:800}
+  .pagehead h1{margin:0;font-size:clamp(27px,4.4vw,42px);font-weight:800;letter-spacing:-.025em;text-wrap:balance}
+  .pagehead p{margin:0;max-width:66ch;line-height:1.75;color:var(--page-sub);font-size:15px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:3px}
+  .meta span{font-size:12px;padding:5px 11px;border:1px solid var(--page-line);border-radius:999px;color:var(--page-sub);font-variant-numeric:tabular-nums}
+
+  .ep{margin-top:56px}
+  .ephead{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:26px;border-bottom:2px solid var(--gold)}
+  .ephead .no{font-family:"Helvetica Neue",Arial,sans-serif;font-size:13px;font-weight:800;letter-spacing:.2em;color:var(--gold)}
+  .ephead h2{margin:0;font-size:clamp(22px,3vw,30px);font-weight:800;letter-spacing:-.02em}
+  .ephead .log{flex:1 1 320px;font-size:13.5px;color:var(--page-sub);line-height:1.6;min-width:0}
+
+  .cuts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:26px}
+
+  .cut{
+    container-type:inline-size; position:relative; aspect-ratio:4/5; width:100%;
+    background:#05060a; border-radius:8px; overflow:hidden; display:block;
+  }
+  .cut img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;display:block}
+  /* 자막 그라데이션 — 긴 글을 받도록 넉넉하게 */
+  .cut .scrim{
+    position:absolute;left:0;right:0;bottom:0;height:74%;
+    background:linear-gradient(180deg,transparent 0%,rgba(3,4,7,.55) 30%,rgba(3,4,7,.88) 62%,rgba(3,4,7,.97) 84%,#03040a 100%);
+    pointer-events:none;
+  }
+  .cut .no{
+    position:absolute;top:3.4cqw;left:4cqw;
+    font-family:"Helvetica Neue",Arial,sans-serif;font-size:3.4cqw;font-weight:800;letter-spacing:.1em;
+    color:rgba(255,255,255,.42);font-variant-numeric:tabular-nums;text-shadow:0 1px 6px rgba(0,0,0,.9);
+  }
+  .cut .cap{
+    position:absolute;left:0;right:0;bottom:0;padding:0 5.4cqw 5.6cqw;
+    display:flex;flex-direction:column;gap:2.2cqw;align-items:flex-start;
+  }
+  .cut .cap p{
+    margin:0;font-size:4.15cqw;font-weight:700;line-height:1.62;letter-spacing:-.02em;
+    color:#fff;word-break:keep-all;text-wrap:pretty;
+    text-shadow:0 2px 12px rgba(0,0,0,.95),0 0 3px rgba(0,0,0,.8);
+  }
+  .cut.q .cap p{
+    font-family:"AppleMyungjo","Nanum Myeongjo","Songti SC",serif;
+    font-weight:400;font-size:4.45cqw;line-height:1.66;
+  }
+  .cut .stamp{
+    font-size:3.5cqw;font-weight:800;letter-spacing:.14em;
+    padding:1.3cqw 2.8cqw;border-radius:.9cqw;white-space:nowrap;line-height:1;
+  }
+  .cut.shock .stamp{background:var(--red);color:#fff}
+  .cut.shock::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 .9cqw var(--red);pointer-events:none}
+  .cut.win .stamp{background:var(--green);color:#06210f}
+  .cut.win::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 .9cqw var(--green);pointer-events:none}
+  .cut.gold .stamp{background:var(--gold);color:#241a02}
+  .cut.next .stamp{background:var(--gold);color:#241a02}
+  .cut.next .cap p{color:var(--gold)}
+  .cut.next::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 .9cqw var(--gold);pointer-events:none}
+
+  .pagefoot{margin-top:62px;padding-top:24px;border-top:1px solid var(--page-line);color:var(--page-sub);font-size:13px;line-height:1.78;max-width:74ch}
+  .pagefoot b{color:var(--page-ink)}
+  .pagefoot code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:color-mix(in srgb, var(--page-ink) 9%, transparent);padding:2px 6px;border-radius:4px}
+  .missing{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--red);font-size:3.6cqw;font-weight:700;text-align:center;padding:6cqw;background:#1a0e0e}
+
+  @media (max-width:520px){ .wrap{padding:34px 14px 70px} .cuts{gap:18px;grid-template-columns:repeat(2,1fr)} }
+</style>
+
+<div class="wrap">
+  <header class="pagehead">
+    <span class="eyebrow">나 혼자만 상한가 · SNS 홍보 웹툰</span>
+    <h1>막장 웹툰</h1>
+    <p id="lede"></p>
+    <div class="meta" id="meta"></div>
+  </header>
+  <div id="eps"></div>
+  <footer class="pagefoot">
+    <b>내보내기</b> — 컷 하나가 인스타 피드 비율(4:5, 1080×1350)입니다. 좌측 상단 번호가 게시 순서입니다.<br>
+    <b>이미지 출처</b> — 전부 게임(<code>sanghanga-web</code>) 저장소에 이미 있는 에셋이며, 새로 생성한 그림은 없습니다.
+  </footer>
+</div>
+
+<script src="episodes.js"></script>
+<script>
+(function(){
+  const root = document.getElementById('eps');
+  const total = EPISODES.reduce((a,e)=>a+e.cuts.length,0);
+  document.getElementById('lede').innerHTML = LEDE;
+  document.getElementById('meta').innerHTML =
+    `<span>${EPISODES.length}화 · 총 ${total}컷</span><span>1080 × 1350 · 4:5</span><span>이미지 100% 게임 에셋</span>`;
+
+  EPISODES.forEach(ep => {
+    const sec = document.createElement('section');
+    sec.className = 'ep';
+    const head = document.createElement('div');
+    head.className = 'ephead';
+    head.innerHTML = `<span class="no">${ep.no}</span><h2>${ep.title}</h2><span class="log">${ep.log}</span>`;
+    sec.appendChild(head);
+
+    const grid = document.createElement('div');
+    grid.className = 'cuts';
+    ep.cuts.forEach((c, i) => {
+      const [src, cap, kind, stamp] = c;
+      const fig = document.createElement('figure');
+      fig.className = 'cut' + (kind ? ' ' + kind : '');
+      fig.style.margin = '0';
+
+      const img = document.createElement('img');
+      img.src = src; img.alt = ''; img.loading = 'lazy';
+      img.addEventListener('error', () => {
+        const m = document.createElement('div');
+        m.className = 'missing'; m.textContent = '이미지 없음\n' + src;
+        fig.appendChild(m);
+      });
+      fig.appendChild(img);
+
+      const scrim = document.createElement('div');
+      scrim.className = 'scrim';
+      fig.appendChild(scrim);
+
+      const no = document.createElement('span');
+      no.className = 'no'; no.textContent = String(i + 1).padStart(2, '0');
+      fig.appendChild(no);
+
+      const capBox = document.createElement('figcaption');
+      capBox.className = 'cap';
+      if (stamp) {
+        const s = document.createElement('span');
+        s.className = 'stamp'; s.textContent = stamp;
+        capBox.appendChild(s);
+      }
+      const p = document.createElement('p');
+      p.innerHTML = cap;
+      capBox.appendChild(p);
+      fig.appendChild(capBox);
+
+      grid.appendChild(fig);
+    });
+    sec.appendChild(grid);
+    root.appendChild(sec);
+  });
+})();
+</script>
