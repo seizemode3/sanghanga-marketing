@@ -63,24 +63,58 @@
     return await new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(b); });
   }
 
-  // 일부 원본 에셋(mc-30 등)은 위쪽에 흰 띠가 박혀 있다 — 그만큼 잘라내고 쓴다
-  const trimCache = new Map();
-  function whiteTop(img) {
-    const key = img.src.slice(0, 64) + img.naturalWidth;
-    if (trimCache.has(key)) return trimCache.get(key);
+  // 캐릭터 에셋(mc-*.webp 등)은 위·아래 두 칸짜리 스프라이트다.
+  // 흰 여백으로 갈린 '첫 번째 패널'만 잘라 쓰고, 주변 흰 여백도 제거한다.
+  const boxCache = new Map();
+  function panelBox(img) {
+    const key = img.src.slice(0, 80) + img.naturalWidth + 'x' + img.naturalHeight;
+    if (boxCache.has(key)) return boxCache.get(key);
+    const W0 = img.naturalWidth, H0 = img.naturalHeight;
     const cv = document.createElement('canvas');
-    cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+    cv.width = W0; cv.height = H0;
     const g = cv.getContext('2d'); g.drawImage(img, 0, 0);
-    let rows = 0;
-    for (let y = 0; y < cv.height; y++) {
-      const d = g.getImageData(0, y, cv.width, 1).data;
-      let white = 0;
-      for (let i = 0; i < d.length; i += 4) if (d[i] >= 245 && d[i + 1] >= 245 && d[i + 2] >= 245) white++;
-      if (white / (d.length / 4) > 0.92) rows++; else break;
+    const data = g.getImageData(0, 0, W0, H0).data;
+
+    const isWhiteRow = y => {
+      let w = 0;
+      for (let x = 0; x < W0; x++) {
+        const i = (y * W0 + x) * 4;
+        if (data[i] >= 238 && data[i + 1] >= 238 && data[i + 2] >= 238) w++;
+      }
+      return w / W0 > 0.9;
+    };
+    const isWhiteCol = (x, y0, y1) => {
+      let w = 0, n = 0;
+      for (let y = y0; y <= y1; y++) {
+        const i = (y * W0 + x) * 4; n++;
+        if (data[i] >= 238 && data[i + 1] >= 238 && data[i + 2] >= 238) w++;
+      }
+      return w / n > 0.9;
+    };
+
+    // 1) 첫 패널의 아래 경계 = 세로 40% 아래에서 처음 나오는 '흰 줄 구간'
+    let bottom = H0 - 1, run = 0;
+    for (let y = Math.floor(H0 * 0.4); y < H0; y++) {
+      if (isWhiteRow(y)) { run++; if (run >= 4) { bottom = y - run; break; } }
+      else run = 0;
     }
-    rows = rows > 8 ? rows + 2 : 0;
-    trimCache.set(key, rows);
-    return rows;
+    // 2) 위·좌·우 흰 여백 제거
+    let top = 0;
+    while (top < bottom && isWhiteRow(top)) top++;
+    let left = 0, right = W0 - 1;
+    while (left < right && isWhiteCol(left, top, bottom)) left++;
+    while (right > left && isWhiteCol(right, top, bottom)) right--;
+
+    // 3) 테두리 선 한 겹 안쪽으로
+    const inset = Math.round(Math.min(W0, H0) * 0.006);
+    const box = {
+      x: Math.min(left + inset, W0 - 2),
+      y: Math.min(top + inset, H0 - 2),
+      w: Math.max(2, (right - left + 1) - inset * 2),
+      h: Math.max(2, (bottom - top + 1) - inset * 2),
+    };
+    boxCache.set(key, box);
+    return box;
   }
 
   async function renderCut(cut, name) {
@@ -93,11 +127,10 @@
     const img = new Image();
     img.src = await toDataURI(cut.querySelector('img').getAttribute('src'));
     await img.decode();
-    const top = whiteTop(img);
-    const sw = img.naturalWidth, shh = img.naturalHeight - top;
-    const s = Math.max(W / sw, H / shh);
-    const dw = sw * s, dh = shh * s;
-    g.drawImage(img, 0, top, sw, shh, (W - dw) / 2, (H - dh) * 0.22, dw, dh);
+    const b = panelBox(img);
+    const s = Math.max(W / b.w, H / b.h);
+    const dw = b.w * s, dh = b.h * s;
+    g.drawImage(img, b.x, b.y, b.w, b.h, (W - dw) / 2, (H - dh) * 0.22, dw, dh);
 
     const kind = ['shock', 'win', 'gold', 'next'].find(k => cut.classList.contains(k));
     const isQ = cut.classList.contains('q');
