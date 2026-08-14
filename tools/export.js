@@ -6,7 +6,9 @@
   const MYEONG = '"AppleMyungjo","Nanum Myeongjo","Songti SC",serif';
   const NUM = '"Helvetica Neue",Arial,sans-serif';
 
-  const PAD_X = 5.4 * K, PAD_B = 5.6 * K, GAP = 2.2 * K;
+  const PAD_X = 5.4 * K, PAD_B = 5.0 * K, GAP = 2.2 * K;
+  // 그림과 글을 겹치지 않게 분리한다 — 아래쪽 '자막 띠'는 글 분량만큼 늘어난다.
+  const BAND_MIN = H * 0.26, BAND_MAX = H * 0.46, FADE = 7 * K;
   const FS = 4.15 * K, FS_Q = 4.45 * K;             // 본문 / 대사 글자크기
   const LH = FS * 1.62, LH_Q = FS_Q * 1.66;
   const ACCENT = { shock: '#ff4d4d', win: '#4ade80', next: '#f5c451' };
@@ -123,37 +125,36 @@
     const g = cv.getContext('2d');
     g.fillStyle = '#05060a'; g.fillRect(0, 0, W, H);
 
-    // 1) 배경 이미지 — cover + object-position center 22%
-    const img = new Image();
-    img.src = await toDataURI(cut.querySelector('img').getAttribute('src'));
-    await img.decode();
-    const b = panelBox(img);
-    const s = Math.max(W / b.w, H / b.h);
-    const dw = b.w * s, dh = b.h * s;
-    g.drawImage(img, b.x, b.y, b.w, b.h, (W - dw) / 2, (H - dh) * 0.22, dw, dh);
-
     const kind = ['shock', 'win', 'gold', 'next'].find(k => cut.classList.contains(k));
     const isQ = cut.classList.contains('q');
     const lh = isQ ? LH_Q : LH;
     const fs = isQ ? FS_Q : FS;
 
-    // 2) 자막 줄 계산 (그라데이션 높이를 글 분량에 맞추기 위해 먼저 계산)
+    // 1) 자막 줄과 자막 띠 높이를 먼저 잡는다 (그림 영역이 남은 자리를 쓴다)
     const maxW = W - PAD_X * 2;
     const capHTML = (cut.querySelector('.cap p') || {}).innerHTML || '';
     const capLines = parseCaption(capHTML).flatMap(l => wrap(g, l, isQ, maxW));
     const stampEl = cut.querySelector('.stamp');
-    const stampH = stampEl ? 3.5 * K + 2.6 * K + GAP : 0;
-    const blockH = capLines.length * lh + stampH + PAD_B;
-    const scrimH = Math.min(H, Math.max(H * 0.62, blockH + 16 * K));
+    const sfs = 3.5 * K, stampCH = sfs + 2.6 * K;
+    const blockH = capLines.length * lh + (stampEl ? stampCH + GAP : 0);
+    const bandH = Math.min(BAND_MAX, Math.max(BAND_MIN, blockH + PAD_B * 2));
+    const bandTop = H - bandH;
 
-    // 3) 그라데이션
-    const grad = g.createLinearGradient(0, H - scrimH, 0, H);
+    // 2) 그림 — 자막 띠 위쪽 영역만 채운다 (얼굴이 보이게 위쪽으로 붙임)
+    const img = new Image();
+    img.src = await toDataURI(cut.querySelector('img').getAttribute('src'));
+    await img.decode();
+    const b = panelBox(img);
+    const s = Math.max(W / b.w, bandTop / b.h);
+    const dw = b.w * s, dh = b.h * s;
+    g.drawImage(img, b.x, b.y, b.w, b.h, (W - dw) / 2, (bandTop - dh) * 0.18, dw, dh);
+
+    // 3) 자막 띠 — 그림과 경계는 짧게 페이드
+    g.fillStyle = '#03040a'; g.fillRect(0, bandTop, W, bandH);
+    const grad = g.createLinearGradient(0, bandTop - FADE, 0, bandTop);
     grad.addColorStop(0, 'rgba(3,4,7,0)');
-    grad.addColorStop(0.30, 'rgba(3,4,7,0.55)');
-    grad.addColorStop(0.62, 'rgba(3,4,7,0.88)');
-    grad.addColorStop(0.84, 'rgba(3,4,7,0.97)');
     grad.addColorStop(1, '#03040a');
-    g.fillStyle = grad; g.fillRect(0, H - scrimH, W, scrimH);
+    g.fillStyle = grad; g.fillRect(0, bandTop - FADE, W, FADE);
 
     // 4) 컷 번호
     g.font = `800 ${3.4 * K}px ${NUM}`;
@@ -164,37 +165,35 @@
     for (const ch of cut.querySelector('.no').textContent) {
       g.fillText(ch, nx, 3.4 * K); nx += g.measureText(ch).width + 0.1 * 3.4 * K;
     }
+    g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0;
 
-    // 5) 자막 — 아래에서 위로 쌓는다
-    let y = H - PAD_B;
-    g.textBaseline = 'alphabetic';
-    g.shadowColor = 'rgba(0,0,0,.95)'; g.shadowBlur = 12; g.shadowOffsetY = 2;
-    const capColor = kind === 'next' ? '#f5c451' : '#fff';
-    for (let i = capLines.length - 1; i >= 0; i--) {
-      let x = PAD_X;
-      const base = y - (lh - fs) / 2;
-      for (const r of capLines[i]) {
-        g.font = runFont(r, isQ); g.fillStyle = capColor;
-        g.fillText(r.text, x, base);
-        x += g.measureText(r.text).width;
-      }
-      y -= lh;
-    }
+    // 5) 띠 안에서 세로 가운데 정렬로 위에서 아래로 쌓는다
+    let y = bandTop + (bandH - blockH) / 2;
 
-    // 6) 스탬프 칩
     if (stampEl) {
-      const sfs = 3.5 * K, txt = stampEl.textContent;
+      const txt = stampEl.textContent;
       g.font = `800 ${sfs}px ${GOTHIC}`;
       const tracking = 0.14 * sfs;
       const tw = [...txt].reduce((a, c) => a + g.measureText(c).width + tracking, 0) - tracking;
-      const px = 2.8 * K, py = 1.3 * K, cw = tw + px * 2, ch = sfs + py * 2;
-      const cy = y - GAP - ch + lh - fs;
-      g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0;
+      const px = 2.8 * K, cw = tw + px * 2;
       g.fillStyle = STAMP_BG[kind] || '#f5c451';
-      g.beginPath(); g.roundRect(PAD_X, cy, cw, ch, 0.9 * K); g.fill();
+      g.beginPath(); g.roundRect(PAD_X, y, cw, stampCH, 0.9 * K); g.fill();
       g.fillStyle = STAMP_FG[kind] || '#241a02'; g.textBaseline = 'middle';
       let sx = PAD_X + px;
-      for (const c of txt) { g.fillText(c, sx, cy + ch / 2 + 1); sx += g.measureText(c).width + tracking; }
+      for (const c of txt) { g.fillText(c, sx, y + stampCH / 2 + 1); sx += g.measureText(c).width + tracking; }
+      y += stampCH + GAP;
+    }
+
+    g.textBaseline = 'middle';
+    const capColor = kind === 'next' ? '#f5c451' : '#fff';
+    for (const line of capLines) {
+      let x = PAD_X;
+      for (const r of line) {
+        g.font = runFont(r, isQ); g.fillStyle = capColor;
+        g.fillText(r.text, x, y + lh / 2);
+        x += g.measureText(r.text).width;
+      }
+      y += lh;
     }
 
     // 7) 강조 테두리

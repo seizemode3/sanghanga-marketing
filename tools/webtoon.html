@@ -34,15 +34,18 @@
 
   .cuts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:26px}
 
+  /* 그림과 글을 겹치지 않게 위·아래로 분리한다 */
   .cut{
     container-type:inline-size; position:relative; aspect-ratio:4/5; width:100%;
-    background:#05060a; border-radius:8px; overflow:hidden; display:block;
+    background:#05060a; border-radius:8px; overflow:hidden;
+    display:flex; flex-direction:column;
   }
-  .cut img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;display:block}
-  /* 자막 그라데이션 — 긴 글을 받도록 넉넉하게 */
+  .cut .imgbox{position:relative;flex:1 1 auto;min-height:0;overflow:hidden}
+  .cut img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 18%;display:block}
+  /* 그림 → 자막 띠 경계의 짧은 페이드 */
   .cut .scrim{
-    position:absolute;left:0;right:0;bottom:0;height:74%;
-    background:linear-gradient(180deg,transparent 0%,rgba(3,4,7,.55) 30%,rgba(3,4,7,.88) 62%,rgba(3,4,7,.97) 84%,#03040a 100%);
+    position:absolute;left:0;right:0;bottom:0;height:7cqw;
+    background:linear-gradient(180deg,transparent 0%,#03040a 100%);
     pointer-events:none;
   }
   .cut .no{
@@ -51,13 +54,12 @@
     color:rgba(255,255,255,.42);font-variant-numeric:tabular-nums;text-shadow:0 1px 6px rgba(0,0,0,.9);
   }
   .cut .cap{
-    position:absolute;left:0;right:0;bottom:0;padding:0 5.4cqw 5.6cqw;
-    display:flex;flex-direction:column;gap:2.2cqw;align-items:flex-start;
+    flex:0 0 auto; min-height:26cqw; background:#03040a; padding:5cqw 5.4cqw;
+    display:flex;flex-direction:column;justify-content:center;gap:2.2cqw;align-items:flex-start;
   }
   .cut .cap p{
     margin:0;font-size:4.15cqw;font-weight:700;line-height:1.62;letter-spacing:-.02em;
     color:#fff;word-break:keep-all;text-wrap:pretty;
-    text-shadow:0 2px 12px rgba(0,0,0,.95),0 0 3px rgba(0,0,0,.8);
   }
   .cut.q .cap p{
     font-family:"AppleMyungjo","Nanum Myeongjo","Songti SC",serif;
@@ -123,22 +125,26 @@
       fig.className = 'cut' + (kind ? ' ' + kind : '');
       fig.style.margin = '0';
 
+      const box = document.createElement('div');
+      box.className = 'imgbox';
+      fig.appendChild(box);
+
       const img = document.createElement('img');
       img.src = src; img.alt = ''; img.loading = 'lazy';
       img.addEventListener('error', () => {
         const m = document.createElement('div');
         m.className = 'missing'; m.textContent = '이미지 없음\n' + src;
-        fig.appendChild(m);
+        box.appendChild(m);
       });
-      fig.appendChild(img);
+      box.appendChild(img);
 
       const scrim = document.createElement('div');
       scrim.className = 'scrim';
-      fig.appendChild(scrim);
+      box.appendChild(scrim);
 
       const no = document.createElement('span');
       no.className = 'no'; no.textContent = String(i + 1).padStart(2, '0');
-      fig.appendChild(no);
+      box.appendChild(no);
 
       const capBox = document.createElement('figcaption');
       capBox.className = 'cap';
