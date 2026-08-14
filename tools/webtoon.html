@@ -34,32 +34,30 @@
 
   .cuts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:26px}
 
-  /* 그림과 글을 겹치지 않게 위·아래로 분리한다 */
+  /* 글은 그림 위에 얹되 화면 세로 한가운데에 둔다 (아래로 치우치지 않게) */
   .cut{
     container-type:inline-size; position:relative; aspect-ratio:4/5; width:100%;
-    background:#05060a; border-radius:8px; overflow:hidden;
-    display:flex; flex-direction:column;
+    background:#05060a; border-radius:8px; overflow:hidden; display:block;
   }
-  .cut .imgbox{position:relative;flex:1 1 auto;min-height:0;overflow:hidden}
-  .cut img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 18%;display:block}
-  /* 그림 → 자막 띠 경계의 짧은 페이드 */
-  .cut .scrim{
-    position:absolute;left:0;right:0;bottom:0;height:7cqw;
-    background:linear-gradient(180deg,transparent 0%,#03040a 100%);
-    pointer-events:none;
-  }
+  .cut .imgbox{position:absolute;inset:0;overflow:hidden}
+  .cut img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;display:block}
   .cut .no{
     position:absolute;top:3.4cqw;left:4cqw;
     font-family:"Helvetica Neue",Arial,sans-serif;font-size:3.4cqw;font-weight:800;letter-spacing:.1em;
     color:rgba(255,255,255,.42);font-variant-numeric:tabular-nums;text-shadow:0 1px 6px rgba(0,0,0,.9);
   }
+  /* 글자 뒤에만 깃털처럼 어둡게 — 띠가 아니라 위아래로 사라지는 그늘 */
   .cut .cap{
-    flex:0 0 auto; min-height:26cqw; background:#03040a; padding:5cqw 5.4cqw;
-    display:flex;flex-direction:column;justify-content:center;gap:2.2cqw;align-items:flex-start;
+    position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+    padding:14cqw 5.4cqw;
+    display:flex;flex-direction:column;gap:2.2cqw;align-items:flex-start;
+    background:linear-gradient(180deg,
+      rgba(3,4,7,0) 0%, rgba(3,4,7,.66) 24%, rgba(3,4,7,.80) 50%, rgba(3,4,7,.66) 76%, rgba(3,4,7,0) 100%);
   }
   .cut .cap p{
     margin:0;font-size:4.15cqw;font-weight:700;line-height:1.62;letter-spacing:-.02em;
     color:#fff;word-break:keep-all;text-wrap:pretty;
+    text-shadow:0 2px 14px rgba(0,0,0,.92);
   }
   .cut.q .cap p{
     font-family:"AppleMyungjo","Nanum Myeongjo","Songti SC",serif;
@@ -137,10 +135,6 @@
         box.appendChild(m);
       });
       box.appendChild(img);
-
-      const scrim = document.createElement('div');
-      scrim.className = 'scrim';
-      box.appendChild(scrim);
 
       const no = document.createElement('span');
       no.className = 'no'; no.textContent = String(i + 1).padStart(2, '0');

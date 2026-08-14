@@ -130,31 +130,34 @@
     const lh = isQ ? LH_Q : LH;
     const fs = isQ ? FS_Q : FS;
 
-    // 1) 자막 줄과 자막 띠 높이를 먼저 잡는다 (그림 영역이 남은 자리를 쓴다)
+    // 1) 자막 줄을 먼저 잡는다 (자막 블록을 세로 가운데에 놓기 위해 높이가 필요하다)
     const maxW = W - PAD_X * 2;
     const capHTML = (cut.querySelector('.cap p') || {}).innerHTML || '';
     const capLines = parseCaption(capHTML).flatMap(l => wrap(g, l, isQ, maxW));
     const stampEl = cut.querySelector('.stamp');
     const sfs = 3.5 * K, stampCH = sfs + 2.6 * K;
     const blockH = capLines.length * lh + (stampEl ? stampCH + GAP : 0);
-    const bandH = Math.min(BAND_MAX, Math.max(BAND_MIN, blockH + PAD_B * 2));
-    const bandTop = H - bandH;
+    const blockTop = (H - blockH) / 2;          // 화면 세로 한가운데
 
-    // 2) 그림 — 자막 띠 위쪽 영역만 채운다 (얼굴이 보이게 위쪽으로 붙임)
+    // 2) 그림 — 화면 전체를 채운다
     const img = new Image();
     img.src = await toDataURI(cut.querySelector('img').getAttribute('src'));
     await img.decode();
     const b = panelBox(img);
-    const s = Math.max(W / b.w, bandTop / b.h);
+    const s = Math.max(W / b.w, H / b.h);
     const dw = b.w * s, dh = b.h * s;
-    g.drawImage(img, b.x, b.y, b.w, b.h, (W - dw) / 2, (bandTop - dh) * 0.18, dw, dh);
+    g.drawImage(img, b.x, b.y, b.w, b.h, (W - dw) / 2, (H - dh) * 0.22, dw, dh);
 
-    // 3) 자막 띠 — 그림과 경계는 짧게 페이드
-    g.fillStyle = '#03040a'; g.fillRect(0, bandTop, W, bandH);
-    const grad = g.createLinearGradient(0, bandTop - FADE, 0, bandTop);
+    // 3) 글자 뒤에만 부드럽게 어둡게 — 위아래로 완전히 사라지게 깃털처럼 처리한다
+    const scrimH = blockH + FADE * 4;
+    const scrimTop = blockTop - FADE * 2;
+    const grad = g.createLinearGradient(0, scrimTop, 0, scrimTop + scrimH);
     grad.addColorStop(0, 'rgba(3,4,7,0)');
-    grad.addColorStop(1, '#03040a');
-    g.fillStyle = grad; g.fillRect(0, bandTop - FADE, W, FADE);
+    grad.addColorStop(0.24, 'rgba(3,4,7,0.66)');
+    grad.addColorStop(0.5, 'rgba(3,4,7,0.80)');
+    grad.addColorStop(0.76, 'rgba(3,4,7,0.66)');
+    grad.addColorStop(1, 'rgba(3,4,7,0)');
+    g.fillStyle = grad; g.fillRect(0, scrimTop, W, scrimH);
 
     // 4) 컷 번호
     g.font = `800 ${3.4 * K}px ${NUM}`;
@@ -167,10 +170,12 @@
     }
     g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0;
 
-    // 5) 띠 안에서 세로 가운데 정렬로 위에서 아래로 쌓는다
-    let y = bandTop + (bandH - blockH) / 2;
+    // 5) 자막 블록 — 세로 한가운데에서 위에서 아래로 쌓는다
+    let y = blockTop;
+    g.shadowColor = 'rgba(0,0,0,.92)'; g.shadowBlur = 14; g.shadowOffsetY = 2;
 
     if (stampEl) {
+      g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0;
       const txt = stampEl.textContent;
       g.font = `800 ${sfs}px ${GOTHIC}`;
       const tracking = 0.14 * sfs;
@@ -182,6 +187,7 @@
       let sx = PAD_X + px;
       for (const c of txt) { g.fillText(c, sx, y + stampCH / 2 + 1); sx += g.measureText(c).width + tracking; }
       y += stampCH + GAP;
+      g.shadowColor = 'rgba(0,0,0,.92)'; g.shadowBlur = 14; g.shadowOffsetY = 2;
     }
 
     g.textBaseline = 'middle';
