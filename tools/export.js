@@ -137,7 +137,8 @@
     const stampEl = cut.querySelector('.stamp');
     const sfs = 3.5 * K, stampCH = sfs + 2.6 * K;
     const blockH = capLines.length * lh + (stampEl ? stampCH + GAP : 0);
-    const blockTop = (H - blockH) / 2;          // 화면 세로 한가운데
+    // 자막 블록의 중심을 화면 세로 2/3 지점에 둔다 (아래 여백은 확보)
+    const blockTop = Math.min(H * (2 / 3) - blockH / 2, H - PAD_B - blockH);
 
     // 2) 그림 — 화면 전체를 채운다
     const img = new Image();
